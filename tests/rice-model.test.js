@@ -302,3 +302,27 @@ test('minimal preset produces inner-edge accent rules for horizontal and vertica
     key: 'left', x: 24, y: 10, width: 2, height: 96
   });
 });
+
+test('reads detached 4.0.4 bar settings and supports the earlier full shell shape', () => {
+  const id = 'io.github.jcarcinogen.rice-bar';
+  const entry = { id, preset: 'glow', radius: 10 };
+  for (const shell of [
+    { barConfig: { layout: { right: [entry] } } },
+    { shellConfig: { bar: { layout: { right: [entry] } } } }
+  ]) {
+    assert.equal(RiceModel.findEntry(RiceModel.configFromShell(shell), id), entry);
+    assert.equal(RiceModel.snapshot(entry).preset, 'glow');
+  }
+  assert.equal(RiceModel.configFromShell(null), null);
+  assert.deepEqual(RiceModel.findEntry(RiceModel.configFromShell({ bar: {} }), id), {});
+});
+
+test('fixed foreground planning preserves Omarchy text while covering hostile wallpapers', () => {
+  for (const text of ['#000000', '#ffffff', '#777777', '#c8c093', '#363646']) {
+    const surface = RiceModel.contrastSurface('#808080', text, '#7e9cd8', 4.5);
+    const plan = RiceModel.readableCompositePlan([surface], 0.456, text, '#7e9cd8', 4.5, true);
+    assert.equal(plan.foreground, text);
+    for (const backdrop of ['#000000', '#ffffff'])
+      assert.ok(RiceModel.contrastRatio(text, RiceModel.compositeColor(surface, backdrop, plan.alpha)) >= 4.5);
+  }
+});

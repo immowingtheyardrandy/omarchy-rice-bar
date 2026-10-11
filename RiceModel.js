@@ -105,8 +105,9 @@ function needsContrastSurface(background, foreground, accent) {
     || contrastRatio(background, accent) < 2
 }
 
-function contrastSurface(background, foreground, accent) {
-  if (!needsContrastSurface(background, foreground, accent)) return background
+function contrastSurface(background, foreground, accent, minimumRatio) {
+  if (!needsContrastSurface(background, foreground, accent)
+      && contrastRatio(background, foreground) >= (Number(minimumRatio) || 3)) return background
   return contrastRatio("#000000", foreground) >= contrastRatio("#ffffff", foreground)
     ? "#000000"
     : "#ffffff"
@@ -137,9 +138,9 @@ function compositeColor(foreground, background, alpha) {
   }
 }
 
-function readableCompositePlan(surfaces, requestedAlpha, themeText, alternate, minimumRatio) {
+function readableCompositePlan(surfaces, requestedAlpha, themeText, alternate, minimumRatio, fixedForeground) {
   var paints = Array.isArray(surfaces) && surfaces.length ? surfaces : ["#000000"]
-  var candidates = [themeText, alternate, "#000000", "#ffffff"]
+  var candidates = fixedForeground ? [themeText] : [themeText, alternate, "#000000", "#ffffff"]
   var unique = []
   var seen = {}
   for (var c = 0; c < candidates.length; c++) {
@@ -326,6 +327,14 @@ function visibleWidgets(items, controllerId) {
     return item.visible === true && item.itemVisible !== false
       && Number(item.width) > 0 && Number(item.height) > 0
   })
+}
+
+// Omarchy 4.0.4 injects a scoped API with a detached barConfig snapshot.
+function configFromShell(shell) {
+  if (!shell) return null
+  if (shell.shellConfig && typeof shell.shellConfig === "object") return shell.shellConfig
+  if (shell.barConfig && typeof shell.barConfig === "object") return { bar: shell.barConfig }
+  return null
 }
 
 function findEntry(config, id) {
@@ -564,6 +573,7 @@ if (typeof module !== "undefined" && module.exports) {
     updateAppearance: updateAppearance,
     resetPreset: resetPreset,
     visibleWidgets: visibleWidgets,
+    configFromShell: configFromShell,
     findEntry: findEntry,
     islandRects: islandRects,
     pillItems: pillItems,

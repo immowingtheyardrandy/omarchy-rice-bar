@@ -10,7 +10,7 @@ Rice Bar follows one rule:
 
 > **Own the chrome, not the widgets.**
 
-It keeps `omarchy.bar` active and leaves Omarchy's official logo, workspaces, indicators, clock, tray, panels, gestures, keyboard navigation, drag/reorder behavior, multi-monitor routing, and shell configuration under Omarchy's control. A passive bottom-layer surface draws behind the live stock widgets and never receives pointer or keyboard input.
+It keeps `omarchy.bar` active and leaves Omarchy's official logo, workspaces, indicators, clock, tray, panels, gestures, keyboard navigation, drag/reorder behavior, multi-monitor routing, and shell configuration under Omarchy's control. Passive chrome draws behind the live widgets inside each stock bar window and never receives pointer or keyboard input. It follows the stock window when Omarchy hides, moves, or remaps the bar.
 
 ## Styles
 
@@ -55,7 +55,7 @@ All Rice Bar styles bind to Omarchy's active `Color.bar.background`, `Color.bar.
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/jcarcinogen/omarchy-rice-bar.git --enable --yes
+omarchy plugin add https://github.com/immowingtheyardrandy/omarchy-rice-bar.git --enable --yes
 ```
 
 The rice-bowl button is added to the right section. Select it to open Rice Bar settings.
@@ -98,21 +98,27 @@ Settings remain inline on Rice Bar's entry in `~/.config/omarchy/shell.json`; no
 
 ## Compatibility
 
-Developed and live-tested on:
+Validated against the installed components on:
 
-- Omarchy `4.0.1-1`
+- Omarchy `4.0.4-1`
 - Quickshell `0.3.1-1`
 - Stock `omarchy.bar`
 - Top, bottom, left, and right bar positions
-- Matte Black and Flexoki Light themes
+- Light and intermediate runtime foreground colors; dark foregrounds in model tests
 
 Rice Bar is deliberately an **Option A stock-bar overlay**, not a `bar` replacement. The active bar ID remains `omarchy.bar`.
 
+Omarchy 4.0.4 supplies capability-scoped plugin APIs. Rice Bar reads inline settings from `shell.barConfig` and uses the scoped `updateEntryInline`, `summon`, `hide`, and `toggle` methods. Widget geometry is read only from visual children of that widget's own window, with bounded traversal and separate handling for horizontal and vertical tray icons.
+
+Transparency is a temporary binding on each host window's background. Rice Bar does not change the global transparency setting, write shell configuration directly, launch processes, or access host services. Selecting Default or unloading the widget restores the original binding. Stock foreground colors remain under Omarchy's control; Rice Bar adjusts its surfaces for readable contrast.
+
 No extra packages. No sudo or pkexec is required.
+
+The compatibility work uses [HelloJesusBeloved's fork](https://github.com/HelloJesusBeloved/omarchy-rice-bar/tree/562580376a1c6c07da4e4573dd3cf830c45c9091) as a reference for the scoped API and hosted chrome approach. This fork uses only hosted chrome, avoiding a separate overlay window, shared visibility polling, and a command fallback that persists global transparency.
 
 ## Behavior preserved
 
-Rice Bar's overlay uses `WlrLayer.Bottom` with an empty input region. It does not replace or intercept:
+Rice Bar's paint item is disabled for input and sits behind widgets in the stock window. It does not replace or intercept:
 
 - Official Omarchy menu logo or menu actions
 - Workspace selection and scrolling
@@ -133,9 +139,12 @@ The release acceptance contract is the official [Omarchy Top Bar manual](https:/
 ## Development
 
 ```bash
-node --test tests/*.test.js
+npm test
 omarchy plugin validate .
+npm run test:qml
 ```
+
+The Node tests need no third-party packages. `test:qml` needs an active Wayland session, Quickshell, and installed Omarchy components (using `$OMARCHY_PATH` or `/usr/share/omarchy`). It opens temporary test windows, loads the real UI components with scoped API fixtures, exercises every preset at every edge, checks window isolation and settings updates, and verifies background-binding restoration on Default and unload. It does not install the plugin or modify the live shell configuration.
 
 For live development, place the repository under:
 
@@ -158,7 +167,7 @@ Do **not** use `omarchy-refresh-shell`; it replaces the user's `shell.json` with
 omarchy plugin remove io.github.jcarcinogen.rice-bar
 ```
 
-Disabling or removing Rice Bar restores the stock bar's captured runtime transparency state.
+Disabling or removing Rice Bar restores each stock window's original background binding and preserves the user's transparency setting.
 
 ## License
 

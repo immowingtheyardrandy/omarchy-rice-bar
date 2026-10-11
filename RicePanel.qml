@@ -21,10 +21,11 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
 
   function persistSettings(next) {
+    if (!bar || !bar.shell || typeof bar.shell.updateEntryInline !== "function") return false
+    if (bar.shell.updateEntryInline(root.moduleName, next) !== true) return false
     settings = next
     if (hostWidget && "settings" in hostWidget) hostWidget.settings = next
-    if (bar && bar.shell && typeof bar.shell.updateEntryInline === "function")
-      bar.shell.updateEntryInline(root.moduleName, next)
+    return true
   }
 
   function selectPreset(value) {
